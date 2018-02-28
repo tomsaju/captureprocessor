@@ -33,29 +33,36 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.Toast;
 
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.samples.vision.ocrreader.result.ResultActivity;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSource;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.GraphicOverlay;
+import com.google.android.gms.vision.Detector;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 /**
  * Activity for the multi-tracker app.  This app detects text and displays the value with the
  * rear facing camera. During detection overlay graphics are drawn to indicate the position,
  * size, and contents of each TextBlock.
  */
-public final class OcrCaptureActivity extends AppCompatActivity {
+public final class OcrCaptureActivity extends AppCompatActivity implements Detector.Processor<TextBlock> {
     private static final String TAG = "OcrCaptureActivity";
 
     // Intent request code to handle updating play services if needed.
@@ -76,6 +83,12 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     // Helper objects for detecting taps and pinches.
     private ScaleGestureDetector scaleGestureDetector;
     private GestureDetector gestureDetector;
+    boolean stop = false;
+    private ArrayList<String> detectedStringList;
+    private Gson gson;
+    private ArrayList<Object> IdentifiedBookList;
+    private TextBlock currentItem;
+    private String it;
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -87,7 +100,10 @@ public final class OcrCaptureActivity extends AppCompatActivity {
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
         mGraphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
-
+        detectedStringList = new ArrayList<>();
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gson = gsonBuilder.create();
+        IdentifiedBookList = new ArrayList<>();
         // read parameters from the intent used to launch the activity.
         boolean autoFocus = getIntent().getBooleanExtra(AutoFocus, false);
         boolean useFlash = getIntent().getBooleanExtra(UseFlash, false);
@@ -150,6 +166,90 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         return b || c || super.onTouchEvent(e);
     }
 
+    @Override
+    public void release() {
+
+    }
+
+    @Override
+    public void receiveDetections(Detector.Detections<TextBlock> detections) {
+
+       // mGraphicOverlay.clear();
+        SparseArray<TextBlock> items = detections.getDetectedItems();
+        if(stop){
+            stop = false;
+            Intent i = new Intent(OcrCaptureActivity.this, ResultActivity.class);
+            if(detectedStringList.isEmpty()){
+                return;
+            }
+            i.putStringArrayListExtra("list",detectedStringList);
+            i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            finish();
+            // requestBookApi(detectedStringList);
+            return;
+        }
+        String total ;
+        for (int i = 0; i < items.size(); ++i) {
+            TextBlock item = items.valueAt(i);
+            Log.d(TAG, "receiveDetections: "+item.getValue());
+            if(!validateItems(item.getValue())){
+                return;
+            }
+            currentItem = item;
+            boolean flag = false;
+            for (String string : detectedStringList) {
+                if(string.equalsIgnoreCase(currentItem.getValue())){
+                    flag = true;
+                }
+            }
+            if(flag){
+                return;
+            }else {
+                detectedStringList.add(item.getValue());
+                 it = item.getValue();
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        Toast.makeText(getBaseContext(), it, Toast.LENGTH_SHORT).show();
+                    }
+                });
+
+            }
+
+            if(detectedStringList.size()>=2){
+                stop = true;
+            }
+
+
+          /*  Retrofit retrofit = new Retrofit.Builder()
+                    .baseUrl(BooksService.SERVICE_ENDPOINT)
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
+
+            BooksService service = retrofit.create(BooksService.class);
+
+            Call<BookList> call = service.getBooks("azkaban");
+            //Call<BookList> call = service.getBook();
+            OcrGraphic graphic = new OcrGraphic(mGraphicOverlay, item);
+            mGraphicOverlay.add(graphic);
+          call.enqueue(new Callback<BookList>() {
+              @Override
+              public void onResponse(Call<BookList> call, Response<BookList> response) {
+                  BookList myList = response.body();
+                  if(myList!=null) {
+                      myList.getBookList();
+                  }
+                  Log.d(TAG, "onResponse: list obtained");
+              }
+
+              @Override
+              public void onFailure(Call<BookList> call, Throwable t) {
+
+              }
+          });*/
+        }
+    }
+
     /**
      * Creates and starts the camera.  Note that this uses a higher resolution in comparison
      * to other detection examples to enable the ocr detector to detect small text samples
@@ -166,7 +266,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
         // is set to receive the text recognition results and display graphics for each text block
         // on screen.
         TextRecognizer textRecognizer = new TextRecognizer.Builder(context).build();
-        textRecognizer.setProcessor(new OcrDetectorProcessor(mGraphicOverlay));
+        textRecognizer.setProcessor(this);
 
         if (!textRecognizer.isOperational()) {
             // Note: The first time that an app using a Vision API is installed on a
@@ -197,7 +297,7 @@ public final class OcrCaptureActivity extends AppCompatActivity {
                 new CameraSource.Builder(getApplicationContext(), textRecognizer)
                 .setFacing(CameraSource.CAMERA_FACING_BACK)
                 .setRequestedPreviewSize(1280, 1024)
-                .setRequestedFps(2.0f)
+                .setRequestedFps(30)
                 .setFlashMode(useFlash ? Camera.Parameters.FLASH_MODE_TORCH : null)
                 .setFocusMode(autoFocus ? Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE : null)
                 .build();
@@ -210,6 +310,9 @@ public final class OcrCaptureActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         startCameraSource();
+        if(detectedStringList!=null){
+            detectedStringList.clear();
+        }
     }
 
     /**
@@ -222,7 +325,17 @@ public final class OcrCaptureActivity extends AppCompatActivity {
             mPreview.stop();
         }
     }
+    private boolean validateItems(String value) {
+        boolean result = true;
+        if(value.length()<2){
+            result = false;
+        }
+        if(value.equalsIgnoreCase("the")){
+            result = false;
+        }
 
+        return result;
+    }
     /**
      * Releases the resources associated with the camera source, the associated detectors, and the
      * rest of the processing pipeline.

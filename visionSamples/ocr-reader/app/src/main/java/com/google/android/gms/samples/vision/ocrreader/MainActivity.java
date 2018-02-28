@@ -21,10 +21,24 @@ import android.os.Bundle;
 import android.app.Activity;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
+import com.android.volley.RequestQueue;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.CommonStatusCodes;
+import com.google.android.gms.samples.vision.ocrreader.model.BookList;
+import com.google.android.gms.samples.vision.ocrreader.ui.camera.BarScannerActivity;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import org.json.JSONObject;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Main activity demonstrating how to pass extra parameters to an activity that
@@ -37,9 +51,12 @@ public class MainActivity extends Activity implements View.OnClickListener {
     private CompoundButton useFlash;
     private TextView statusMessage;
     private TextView textValue;
-
+    private Gson gson;
     private static final int RC_OCR_CAPTURE = 9003;
     private static final String TAG = "MainActivity";
+    private static final String ENDPOINT = "https://www.googleapis.com/books/v1/volumes?q=title:azkaban";
+    private RequestQueue requestQueue;
+    Button isbnButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,8 +68,18 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         autoFocus = (CompoundButton) findViewById(R.id.auto_focus);
         useFlash = (CompoundButton) findViewById(R.id.use_flash);
-
+        isbnButton = (Button) findViewById(R.id.isbnButton);
+        isbnButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent i = new Intent(MainActivity.this, BarScannerActivity.class);
+                startActivity(i);
+            }
+        });
         findViewById(R.id.read_text).setOnClickListener(this);
+        requestQueue = Volley.newRequestQueue(getApplicationContext());
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gson = gsonBuilder.create();
     }
 
     /**
@@ -63,12 +90,47 @@ public class MainActivity extends Activity implements View.OnClickListener {
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.read_text) {
-            // launch Ocr capture activity.
+
+           /* JsonObjectRequest request = new JsonObjectRequest(ENDPOINT, null, new com.android.volley.Response.Listener<JSONObject>() {
+                @Override
+                public void onResponse(JSONObject response) {
+
+                    BookList posts = gson.fromJson(response.toString(), BookList.class);
+                    Log.d(TAG, "onResponse: ");
+                }
+            }, new com.android.volley.Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+
+                }
+            });
+
+            requestQueue.add(request);*/
+
+
+            /*ArrayList<String> detectedStringList = new ArrayList<>();
+            detectedStringList.add("asd");
+            detectedStringList.add("asdsasd");
+            detectedStringList.add("as");
+            detectedStringList.add("asqwq");
+            detectedStringList.add("asqwqvvvvvvv");
+                Collections.sort(detectedStringList, new java.util.Comparator<String>() {
+                    @Override
+                    public int compare(String s1, String s2) {
+                        // TODO: Argument validation (nullity, length)
+                        return s2.length() - s1.length();// comparision
+                    }
+                });
+                Log.d(TAG, "requestBookApi: sorted");*/
+
+          // launch Ocr capture activity.
             Intent intent = new Intent(this, OcrCaptureActivity.class);
             intent.putExtra(OcrCaptureActivity.AutoFocus, autoFocus.isChecked());
             intent.putExtra(OcrCaptureActivity.UseFlash, useFlash.isChecked());
 
             startActivityForResult(intent, RC_OCR_CAPTURE);
+        }else{
+
         }
     }
 
