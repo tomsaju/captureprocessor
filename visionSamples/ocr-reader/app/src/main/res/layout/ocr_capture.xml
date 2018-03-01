@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/topLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:keepScreenOn="true">
-
     <com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview
         android:id="@+id/preview"
         android:layout_width="match_parent"
@@ -18,5 +18,14 @@
             android:layout_height="match_parent" />
 
     </com.google.android.gms.samples.vision.ocrreader.ui.camera.CameraSourcePreview>
+    <com.ns.developer.tagview.widget.TagCloudLinkView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:isDeletable="false"
+        app:tagLayoutColor="#ffff0000"
+        app:tagTextSize="8sp"
+        app:tagTextColor="#ff9acd32"
+    android:id="@+id/tagConatiner"/>
 
-</LinearLayout>
+</FrameLayout>

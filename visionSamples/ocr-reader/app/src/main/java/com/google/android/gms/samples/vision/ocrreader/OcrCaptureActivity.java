@@ -25,6 +25,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
@@ -38,6 +39,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.android.volley.toolbox.Volley;
@@ -53,9 +55,13 @@ import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.ns.developer.tagview.entity.Tag;
+import com.ns.developer.tagview.widget.TagCloudLinkView;
 
 import java.io.IOException;
 import java.util.ArrayList;
+
+
 
 /**
  * Activity for the multi-tracker app.  This app detects text and displays the value with the
@@ -89,6 +95,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Detec
     private ArrayList<Object> IdentifiedBookList;
     private TextBlock currentItem;
     private String it;
+    TagCloudLinkView containerLayout;
 
     /**
      * Initializes the UI and creates the detector pipeline.
@@ -99,6 +106,7 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Detec
         setContentView(R.layout.ocr_capture);
 
         mPreview = (CameraSourcePreview) findViewById(R.id.preview);
+        containerLayout = (TagCloudLinkView) findViewById(R.id.tagConatiner);
         mGraphicOverlay = (GraphicOverlay<OcrGraphic>) findViewById(R.id.graphicOverlay);
         detectedStringList = new ArrayList<>();
         GsonBuilder gsonBuilder = new GsonBuilder();
@@ -123,6 +131,22 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Detec
         Snackbar.make(mGraphicOverlay, "Tap to capture. Pinch/Stretch to zoom",
                 Snackbar.LENGTH_LONG)
                 .show();
+        containerLayout.setClickable(true);
+        containerLayout.setOnTagSelectListener(new TagCloudLinkView.OnTagSelectListener() {
+            @Override
+            public void onTagSelected(Tag tag, int position) {
+                ArrayList<String> singleList = new ArrayList<>();
+                singleList.add(tag.getText());
+                Intent i = new Intent(OcrCaptureActivity.this, ResultActivity.class);
+                if (singleList.isEmpty()) {
+                    return;
+                }
+                i.putStringArrayListExtra("list", singleList);
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+                finish();
+            }
+        });
     }
 
     /**
@@ -210,13 +234,15 @@ public final class OcrCaptureActivity extends AppCompatActivity implements Detec
                  it = item.getValue();
                 runOnUiThread(new Runnable() {
                     public void run() {
-                        Toast.makeText(getBaseContext(), it, Toast.LENGTH_SHORT).show();
+                       // Toast.makeText(getBaseContext(), it, Toast.LENGTH_SHORT).show();
+                        containerLayout.add(new Tag(1,it));
+                        containerLayout.drawTags();
                     }
                 });
 
             }
 
-            if(detectedStringList.size()>=2){
+            if(detectedStringList.size()>=8){
                 stop = true;
             }
 

@@ -90,13 +90,15 @@ public class ResultActivity extends AppCompatActivity {
                 Log.d(TAG, "onResponse: ");
                 List<Book> books = posts.getBookList();
                 if(books!=null) {
-                    for (int i = 0; i < books.size(); i++) {
+                    /*for (int i = 0; i < books.size(); i++) {
                         //if (books.get(i).getVolumeInfo().getTitle().contains(value.replaceAll("\\n","%20"))) {
                         IdentifiedBookList.add(books.get(i).getVolumeInfo().getTitle());
                         Log.d(TAG, "identified book" + books.get(i).getVolumeInfo().getTitle());
                         // }
-                    }
-                    adapter = new listAdapter(getApplicationContext(),IdentifiedBookList);
+                    }*/
+                    ArrayList<Book> bookList = new ArrayList<>();
+                    bookList.addAll(books);
+                    adapter = new listAdapter(getApplicationContext(),bookList);
                     resultlist.setAdapter(adapter);
                 }
 
@@ -112,7 +114,7 @@ public class ResultActivity extends AppCompatActivity {
     }
 
     private void requestBookApi(final String value) {
-        String url =ENDPOINT+ value.replaceAll("\\n","%20")+"&maxResults=2";
+        String url =ENDPOINT+ value.replaceAll("\\n","%20")+"&maxResults=5";
 
         String query=url.replaceAll(" ", "%20");
 
@@ -124,13 +126,16 @@ public class ResultActivity extends AppCompatActivity {
                 Log.d(TAG, "onResponse: ");
                 List<Book> books = posts.getBookList();
                 if(books!=null) {
-                    for (int i = 0; i < books.size(); i++) {
+                   /* for (int i = 0; i < books.size(); i++) {
                         //if (books.get(i).getVolumeInfo().getTitle().contains(value.replaceAll("\\n","%20"))) {
                             IdentifiedBookList.add(books.get(i).getVolumeInfo().getTitle());
                             Log.d(TAG, "identified book" + books.get(i).getVolumeInfo().getTitle());
                        // }
-                    }
-                    adapter = new listAdapter(getApplicationContext(),IdentifiedBookList);
+                    }*/
+
+                   ArrayList<Book> bookList = new ArrayList<>();
+                   bookList.addAll(books);
+                    adapter = new listAdapter(getApplicationContext(),bookList);
                     resultlist.setAdapter(adapter);
                 }
 

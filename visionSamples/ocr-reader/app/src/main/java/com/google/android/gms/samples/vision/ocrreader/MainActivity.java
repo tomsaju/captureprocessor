@@ -32,6 +32,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.samples.vision.ocrreader.model.BookList;
 import com.google.android.gms.samples.vision.ocrreader.ui.camera.BarScannerActivity;
+import com.google.android.gms.samples.vision.ocrreader.ui.camera.ImageReader;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -65,7 +66,13 @@ public class MainActivity extends Activity implements View.OnClickListener {
 
         statusMessage = (TextView)findViewById(R.id.status_message);
         textValue = (TextView)findViewById(R.id.text_value);
-
+        Button imagbtn = (Button) findViewById(R.id.imagebtn);
+        imagbtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this, ImageReader.class));
+            }
+        });
         autoFocus = (CompoundButton) findViewById(R.id.auto_focus);
         useFlash = (CompoundButton) findViewById(R.id.use_flash);
         isbnButton = (Button) findViewById(R.id.isbnButton);
